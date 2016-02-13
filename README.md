@@ -24,9 +24,11 @@ There's no point in forking a project that already does what you want, so here a
 
 4. YaRF seems to dislike 0 byte files when mounting a bucket without a prefix. It's on my list.
 
-5. Sometimes killing the riofs won't remove the mount from the kernel's mount table requiring a manual `umount`. Seems to be more an issue with CentOS' antiquated FUSE than Rio.
+5. Sometimes killing riofs won't remove the mount from the kernel's mount table requiring a manual `umount`. Seems to be more an issue with CentOS' antiquated FUSE than Rio.
 
 6. According to valgrind a few bytes of memory leak here and there. I plan on doing a full leak check once I've backported the additional functionality from my other, less good RioFS fork.
+
+7. Neither YaRF nor RioFS support v4 signing. This is number 1 on my TODO list.
 
 ### Dependencies
 
