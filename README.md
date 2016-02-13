@@ -20,7 +20,7 @@ There's no point in forking a project that already does what you want, so here a
 
 2. Folder renaming is not supported (inherited limitation)
 
-3. YaRF/RioFS is a leaky abstraction. There are several POSIXy things that aren't (and probably will never) be supported.
+3. YaRF/RioFS provides a "fileysystem", generally called a leaky abstraction. There are several POSIXy things that aren't (and probably will never be) supported.
 
 4. YaRF seems to dislike 0 byte files when mounting a bucket without a prefix. It's on my list.
 
@@ -98,7 +98,7 @@ The most basic way of using YaRF is:
 ```
 export AWS_ACCESS_KEY_ID="your access key"  
 export AWS_SECRET_ACCESS_KEY="your secret"
-riofs my-bucket[/optional/path/] localdir
+riofs my-bucket[/optional/prefix/] localdir
 ```
 
 ### Options
