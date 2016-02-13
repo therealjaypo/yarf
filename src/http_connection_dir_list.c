@@ -401,8 +401,6 @@ void http_connection_get_directory_listing (HttpConnection *con, const gchar *di
         dir_req->dir_path = g_strdup_printf ("%s/", dir_path);
     }
 
-	printf("\nPREFIX=%s",key_prefix);
-
     req_path = g_strdup_printf ("/?delimiter=/&max-keys=%u&prefix=%s%s", dir_req->max_keys, key_prefix, dir_req->dir_path);
 
     res = http_connection_make_request (con,

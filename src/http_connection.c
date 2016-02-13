@@ -786,6 +786,7 @@ gboolean http_connection_make_request (HttpConnection *con,
         if (data->responce_cb)
             data->responce_cb (data->con, data->ctx, FALSE, NULL, 0, NULL);
         request_data_free (data);
+    g_free(tmp);
         return FALSE;
     }
 
@@ -821,6 +822,7 @@ gboolean http_connection_make_request (HttpConnection *con,
     } else {
 	    request_str = g_strdup_printf ("/%s%s", bucket_name, tmp/*data->resource_path*/);
     }
+    g_free(tmp);
   //  } else
    //	request_str = g_strdup_printf("%s",data->resource_path);
 
