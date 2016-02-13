@@ -130,6 +130,7 @@ static void fileio_release_on_update_headers_con_cb (gpointer client, gpointer c
     unsigned char digest[16];
     gchar *md5str;
     size_t i;
+    const gchar *cc_header = NULL;
 
     LOG_debug (FIO_LOG, INO_CON_H"Updating object's headers..", INO_T (fop->ino), con);
 
@@ -139,6 +140,11 @@ static void fileio_release_on_update_headers_con_cb (gpointer client, gpointer c
         http_connection_add_output_header (con, "Content-Type", fop->content_type);
     http_connection_add_output_header (con, "x-amz-metadata-directive", "REPLACE");
     http_connection_add_output_header (con, "x-amz-storage-class", conf_get_string (application_get_conf (con->app), "s3.storage_type"));
+
+    cc_header = conf_get_string(application_get_conf(con->app),"s3.cache_control");
+    if( cc_header != NULL && strlen(cc_header) ) {
+    	http_connection_add_output_header(con,"Cache-Control",cc_header);
+    }
 
     MD5_Final (digest, &fop->md5);
     md5str = g_malloc (33);

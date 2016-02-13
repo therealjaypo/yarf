@@ -28,6 +28,8 @@ There's no point in forking a project that already does what you want, so here a
 
 6. With neither `libmagic` nor `/etc/mime.types` everything is probably uploaded as `text/plain`.
 
+7. According to valgrind a few bytes of memory leak here and there. I plan on doing a full leak check once I've backported the additional functionality from my other, less good RioFS fork.
+
 ### Dependencies
 
 As YaRF is basically a fork of RioFS, it has the same dependencies as the upstream project:
