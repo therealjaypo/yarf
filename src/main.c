@@ -284,7 +284,7 @@ static void sigusr1_cb (G_GNUC_UNUSED evutil_socket_t sig, G_GNUC_UNUSED short e
         LOG_err (APP_LOG, "Failed to parse configuration file: %s", _app->conf_path);
         conf_destroy(conf_new);
     } else {
-        const gchar *copy_entries[] = {"s3.host", "s3.port", "s3.versioning", "s3.access_key_id", "s3.secret_access_key", "s3.bucket_name", NULL};
+        const gchar *copy_entries[] = {"s3.host", "s3.port", "s3.versioning", "s3.access_key_id", "s3.secret_access_key", "s3.bucket_name", "s3.key_prefix", NULL};
         int i;
 
         _app->conf = conf_new;
@@ -621,6 +621,7 @@ int main (int argc, char *argv[])
     GOptionContext *context;
     gchar **s_params = NULL;
     gchar **s_config = NULL;
+    gchar *s_key_prefix = NULL;
     gboolean foreground = FALSE;
     gchar conf_str[1023];
     struct stat st;
@@ -875,6 +876,14 @@ int main (int argc, char *argv[])
         conf_set_boolean (app->conf, "s3.force_head_requests_on_lookup", TRUE);
     else
         conf_set_boolean (app->conf, "s3.force_head_requests_on_lookup", FALSE);
+
+    s_key_prefix = g_strstr_len(s_params[0],-1,"/");
+    if( s_key_prefix != NULL ) {
+    	*s_key_prefix++ = 0;
+	conf_set_string(app->conf, "s3.key_prefix", g_strdup_printf("/%s",s_key_prefix) );
+    } else {
+    	conf_set_string(app->conf, "s3.key_prefix", "" );
+    }
 
     conf_set_string (app->conf, "s3.bucket_name", s_params[0]);
     if (!application_set_url (app, conf_get_string (app->conf, "s3.endpoint"))) {

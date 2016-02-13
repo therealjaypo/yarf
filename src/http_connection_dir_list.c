@@ -44,6 +44,8 @@ static gboolean parse_dir_xml (DirListRequest *dir_list, const char *xml, size_t
     int i;
     xmlXPathObjectPtr key;
     xmlNodeSetPtr key_nodes;
+    const gchar *key_prefix = conf_get_string(application_get_conf(dir_list->app),"s3.key_prefix");
+    int pfxlen = strlen((char *)key_prefix);
 
 // checks value for NULL, continue if it fails
 #define XML_VAR_CHK(v) \
@@ -158,8 +160,15 @@ static gboolean parse_dir_xml (DirListRequest *dir_list, const char *xml, size_t
             size = 0;
         }
 
-        dir_tree_update_entry (dir_list->dir_tree, dir_list->dir_path, DET_file, dir_list->ino,
-            bname, size, last_modified);
+	if( pfxlen > 0 ) {
+		if( strncmp( (char *)bname, (char *)key_prefix+1, pfxlen-1 ) == 0 )
+			bname += pfxlen-1;
+	}
+
+	if( strlen((char *)bname) ) {
+            dir_tree_update_entry (dir_list->dir_tree, dir_list->dir_path, DET_file, dir_list->ino,
+                bname, size, last_modified);
+	}
 
         xmlFree (name);
     }
@@ -214,7 +223,15 @@ static gboolean parse_dir_xml (DirListRequest *dir_list, const char *xml, size_t
         // XXX: save / restore directory mtime
         last_modified = time (NULL);
 
-        dir_tree_update_entry (dir_list->dir_tree, dir_list->dir_path, DET_dir, dir_list->ino, bname, 0, last_modified);
+	if( pfxlen > 0 ) {
+		if( strncmp( bname, (char *)key_prefix+1, pfxlen-1 ) == 0 )
+			bname += pfxlen-1;
+	}
+
+	if( strlen(bname) ) {
+            dir_tree_update_entry (dir_list->dir_tree, dir_list->dir_path, DET_dir, dir_list->ino,
+                bname, 0, last_modified);
+	}
 
         xmlFree (name);
     }
@@ -296,6 +313,10 @@ static void http_connection_on_directory_listing_data (HttpConnection *con, void
     const gchar *next_marker = NULL;
     gchar *req_path;
     gboolean res;
+    const gchar *key_prefix = conf_get_string(application_get_conf(con->app),"s3.key_prefix");
+
+    if( strlen(key_prefix) )
+    	key_prefix++;
 
     if (!buf_len || !buf) {
         LOG_err (CON_DIR_LOG, INO_CON_H"Directory buffer is empty !", INO_T (dir_req->ino), con);
@@ -326,7 +347,8 @@ static void http_connection_on_directory_listing_data (HttpConnection *con, void
     }
 
     // execute HTTP request
-    req_path = g_strdup_printf ("/?delimiter=/&marker=%s&max-keys=%u&prefix=%s", next_marker, dir_req->max_keys, dir_req->dir_path);
+    req_path = g_strdup_printf ("/?delimiter=/&marker=%s&max-keys=%u&prefix=%s%s", next_marker, dir_req->max_keys, (char *)key_prefix, dir_req->dir_path);
+    printf("req_path %s\n",req_path);
 
     xmlFree ((void *) next_marker);
 
@@ -352,6 +374,10 @@ void http_connection_get_directory_listing (HttpConnection *con, const gchar *di
     DirListRequest *dir_req;
     gchar *req_path;
     gboolean res;
+    const gchar *key_prefix = conf_get_string(application_get_conf(con->app),"s3.key_prefix");
+
+    if( key_prefix )
+    	key_prefix++;
 
     LOG_debug (CON_DIR_LOG, INO_CON_H"Getting directory listing for: >>%s<<", INO_T (con), con, dir_path);
 
@@ -374,7 +400,7 @@ void http_connection_get_directory_listing (HttpConnection *con, const gchar *di
         dir_req->dir_path = g_strdup_printf ("%s/", dir_path);
     }
 
-    req_path = g_strdup_printf ("/?delimiter=/&max-keys=%u&prefix=%s", dir_req->max_keys, dir_req->dir_path);
+    req_path = g_strdup_printf ("/?delimiter=/&max-keys=%u&prefix=%s%s", dir_req->max_keys, (char *)key_prefix, dir_req->dir_path);
 
     res = http_connection_make_request (con,
         req_path, "GET",

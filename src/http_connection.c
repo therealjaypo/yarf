@@ -681,6 +681,9 @@ gboolean http_connection_make_request (HttpConnection *con,
     GList *l;
     const gchar *bucket_name;
     const gchar *host;
+    gchar *tmp = NULL;
+    int rpoffs=0;
+    gboolean isaclreq = 0;
 
     if (!con->evcon)
         if (!http_connection_init (con)) {
@@ -695,9 +698,10 @@ gboolean http_connection_make_request (HttpConnection *con,
 
         data = g_new0 (RequestData, 1);
         data->redirects = 0;
-        data->resource_path = url_escape (resource_path);
         data->http_cmd = g_strdup (http_cmd);
         data->out_buffer = evbuffer_new ();
+        data->resource_path = url_escape(resource_path);
+
         if (out_buffer) {
             gchar *tmp;
 
@@ -765,7 +769,14 @@ gboolean http_connection_make_request (HttpConnection *con,
         return FALSE;
     }
 
-    auth_str = http_connection_get_auth_string (con->app, http_cmd, data->resource_path, time_str, data->l_output_headers);
+    bucket_name = conf_get_string (application_get_conf (con->app), "s3.bucket_name");
+
+    if( strcasecmp((char *)data->resource_path,"/?acl") != 0 && strcasecmp((char *)data->resource_path,"/?versioning") != 0 && strncasecmp((char *)data->resource_path,"/?del",5) != 0 )
+        tmp = g_strdup_printf("%s%s",conf_get_string (application_get_conf (con->app), "s3.key_prefix"),data->resource_path+1);
+    else
+    	tmp = g_strdup(data->resource_path);
+
+    auth_str = http_connection_get_auth_string (con->app, http_cmd, tmp/*data->resource_path*/, time_str, data->l_output_headers);
     snprintf (auth_key, sizeof (auth_key), "AWS %s:%s", conf_get_string (application_get_conf (con->app), "s3.access_key_id"), auth_str);
     g_free (auth_str);
 
@@ -800,14 +811,18 @@ gboolean http_connection_make_request (HttpConnection *con,
         // evbuffer_add_buffer_reference (req->output_buffer, out_buffer);
     }
 
-    bucket_name = conf_get_string (application_get_conf (con->app), "s3.bucket_name");
     host = conf_get_string (application_get_conf (con->app), "s3.host");
 
+    if( strcasecmp((char *)data->resource_path,"/?acl") == 0 || strcasecmp((char *)data->resource_path,"/?versioning") == 0 || strncasecmp((char *)data->resource_path,"/?del",5) == 0 )
+        rpoffs=1;
+
     if (!strncasecmp (bucket_name, host, strlen (bucket_name))) {
-        request_str = g_strdup_printf ("%s", data->resource_path);
+            request_str = g_strdup_printf ("%s",tmp/* data->resource_path*/);
     } else {
-        request_str = g_strdup_printf ("/%s%s", bucket_name, data->resource_path);
+	    request_str = g_strdup_printf ("/%s%s", bucket_name, tmp/*data->resource_path*/);
     }
+  //  } else
+   //	request_str = g_strdup_printf("%s",data->resource_path);
 
     LOG_msg (CON_LOG, CON_H"%s %s  bucket: %s, host: %s, out_len: %zd", con,
         http_cmd, request_str, bucket_name, host,
