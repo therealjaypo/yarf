@@ -684,6 +684,7 @@ gboolean http_connection_make_request (HttpConnection *con,
     gchar *tmp = NULL;
     int rpoffs=0;
     gboolean isaclreq = 0;
+    const char *key_prefix;
 
     if (!con->evcon)
         if (!http_connection_init (con)) {
@@ -771,9 +772,11 @@ gboolean http_connection_make_request (HttpConnection *con,
 
     bucket_name = conf_get_string (application_get_conf (con->app), "s3.bucket_name");
 
-    if( strcasecmp((char *)data->resource_path,"/?acl") != 0 && strcasecmp((char *)data->resource_path,"/?versioning") != 0 && strncasecmp((char *)data->resource_path,"/?del",5) != 0 )
-        tmp = g_strdup_printf("%s%s",conf_get_string (application_get_conf (con->app), "s3.key_prefix"),data->resource_path+1);
-    else
+    key_prefix = conf_get_string(application_get_conf(con->app),"s3.key_prefix");
+    if( strlen(key_prefix) && ( strcasecmp((char *)data->resource_path,"/?acl") != 0 && strcasecmp((char *)data->resource_path,"/?versioning") != 0 && strncasecmp((char *)data->resource_path,"/?del",5) != 0 ) ) {
+
+       	tmp = g_strdup_printf("%s%s",key_prefix,data->resource_path+1);
+    } else
     	tmp = g_strdup(data->resource_path);
 
     auth_str = http_connection_get_auth_string (con->app, http_cmd, tmp/*data->resource_path*/, time_str, data->l_output_headers);

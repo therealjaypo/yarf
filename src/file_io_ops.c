@@ -131,6 +131,8 @@ static void fileio_release_on_update_headers_con_cb (gpointer client, gpointer c
     gchar *md5str;
     size_t i;
     const gchar *cc_header = NULL;
+    const gchar *cp_src = NULL;
+    const gchar *key_prefix = NULL;
 
     LOG_debug (FIO_LOG, INO_CON_H"Updating object's headers..", INO_T (fop->ino), con);
 
@@ -153,7 +155,12 @@ static void fileio_release_on_update_headers_con_cb (gpointer client, gpointer c
     http_connection_add_output_header (con, "x-amz-meta-md5", md5str);
     g_free (md5str);
 
-    cpy_path = g_strdup_printf ("%s%s", conf_get_string (application_get_conf (fop->app), "s3.bucket_name"), fop->fname);
+    key_prefix = conf_get_string(application_get_conf(fop->app),"s3.key_prefix");
+    if( strlen(key_prefix) )
+        cpy_path = g_strdup_printf ("%s%s%s", conf_get_string (application_get_conf (fop->app), "s3.bucket_name"), key_prefix, fop->fname+1);
+    else
+        cpy_path = g_strdup_printf ("%s%s", conf_get_string (application_get_conf (fop->app), "s3.bucket_name"), fop->fname);
+
     http_connection_add_output_header (con, "x-amz-copy-source", cpy_path);
     g_free (cpy_path);
 
