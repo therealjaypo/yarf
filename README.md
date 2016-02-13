@@ -24,7 +24,7 @@ There's no point in forking a project that already does what you want, so here a
 
 4. Sometimes killing riofs won't remove the mount from the kernel's mount table requiring a manual `umount`. Seems to be more an issue with CentOS' antiquated FUSE than Rio.
 
-5. According to valgrind a few bytes of memory leak here and there. I plan on doing a full leak check once I've backported the additional functionality from my other, less good RioFS fork.
+5. According to valgrind a few bytes of memory leak here and there. I plan on doing a full leak pass once v4 signing is implemented.
 
 6. Neither YaRF nor RioFS support v4 signing. This is number 1 on my TODO list.
 
