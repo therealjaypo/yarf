@@ -18,7 +18,7 @@ There's no point in forking a project that already does what you want, so here a
 
 1. Appending data to an existing file is not supported (this is an S3 limitation)
 
-2. Folder renaming is not supported (inherited limitation)
+2. Folder renaming is not supported (inherited limitation, probably S3 related)
 
 3. YaRF/RioFS provides a "fileysystem", generally called a leaky abstraction. There are several POSIXy things that aren't (and probably will never be) supported.
 
@@ -26,9 +26,7 @@ There's no point in forking a project that already does what you want, so here a
 
 5. Sometimes killing the riofs won't remove the mount from the kernel's mount table requiring a manual `umount`. Seems to be more an issue with CentOS' antiquated FUSE than Rio.
 
-6. With neither `libmagic` nor `/etc/mime.types` everything is probably uploaded as `text/plain`.
-
-7. According to valgrind a few bytes of memory leak here and there. I plan on doing a full leak check once I've backported the additional functionality from my other, less good RioFS fork.
+6. According to valgrind a few bytes of memory leak here and there. I plan on doing a full leak check once I've backported the additional functionality from my other, less good RioFS fork.
 
 ### Dependencies
 
