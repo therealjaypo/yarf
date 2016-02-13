@@ -84,8 +84,36 @@ if test "x$enable_openssl" = "xyes" ; then
     fi
 fi
 
+mimetypes=false
+AC_MSG_CHECKING([if I should use mime.types])
+AC_ARG_WITH(
+	mimetypes,
+	AS_HELP_STRING(--with-mimetypes, use /etc/mime.types for guessing MIME types),
+	[case $with_mimetypes in
+		no)
+			mimetypes=false
+			;;
+		*)
+			mimetypes=true
+			with_libmagic="no"
+			;;
+		esac
+	],
+	[
+		mimetypes=false
+	]
+)
+if test "x$mimetypes" = "xtrue" ; then
+	AC_DEFINE(USE_MIMETYPES, [1], [Define to use /etc/mime.types for MIME types])
+	AC_MSG_RESULT(yes)
+else
+	AC_MSG_RESULT(no)
+fi
+AM_CONDITIONAL([USE_MIMETYPES], [test "x$mimetypes" = "xtrue"])
+
 #AC_MSG_CHECKING(for libmagic)
 libmagic=false
+AC_MSG_CHECKING([if I should use libmagic])
 AC_ARG_WITH(libmagic,
   AS_HELP_STRING(--with-libmagic=PATH, base of libmagic installation),
   [AC_MSG_RESULT($with_libmagic)

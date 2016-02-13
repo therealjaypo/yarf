@@ -25,6 +25,10 @@
 #include "stat_srv.h"
 #include "conf_keys.h"
 
+#ifdef USE_MIMETYPES
+#include "mimetypes.h"
+#endif
+
 /*{{{ struct */
 struct _Application {
     gchar *conf_path;
@@ -949,6 +953,10 @@ int main (int argc, char *argv[])
         magic_close(app->magic_ctx);
         return -1;
     }
+#endif
+
+#ifdef USE_MIMETYPES
+    mimetypes_load();
 #endif
 
     app->stat_srv = stat_srv_create (app);

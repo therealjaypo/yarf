@@ -7,7 +7,7 @@ RioFS is a userspace filesystem that allows administrators to mount Amazon S3 bu
 There's no point in forking a project that already does what you want, so here are a few of the reasons that led me to fork YaRF:
 
 1. Support for mounting prefixes within buckets  
-   ie: `riofs bucket-name/arbitrary/prefix/here localdir`
+   ie: `riofs bucket-name/arbitrary/prefix/here/ localdir` (note trailing slash)
 
 
 2. Better MIME typing on created objects by using `/etc/mime.types` instead of `libmagic`, which is useful when using S3's static web server
@@ -54,13 +54,13 @@ Building YaRF differs from building regular RioFS only when you want to use `/et
 ### Configure Options
 
 **--enable-debug**  
-Creates a debug build of RioFS/YaRF
+Creates a debug build of RioFS/YaRF.
 
 **--with-libmagic**  
-Use `libmagic` for guessing MIME types of created objects
+Use `libmagic` for guessing MIME types of created objects.
 
 **--with-mimetypes**  
-Use the `/etc/mime.types` to guess the MIME types of created objects
+Use the `/etc/mime.types` to guess the MIME types of created objects. Using this implies `--with-libmagic=no`
 
 ### Examples
 
@@ -98,6 +98,7 @@ The most basic way of using YaRF is:
 ```
 export AWS_ACCESS_KEY_ID="your access key"  
 export AWS_SECRET_ACCESS_KEY="your secret"
+riofs my-bucket[/optional/path/] localdir
 ```
 
 ### Options

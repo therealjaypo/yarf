@@ -361,6 +361,14 @@ static void fileio_release_on_part_con_cb (gpointer client, gpointer ctx)
     }
 #endif
 
+#ifdef USE_MIMETYPES
+    gchar *mime_type = (gchar *)mimetypes_find(path);
+    if( mime_type ) {
+        LOG_debug(FIO_LOG,"mime.types says %s is %s",path,mime_type);
+	fop->content_type = strdup(mime_type);
+    }
+#endif
+
     http_connection_acquire (con);
 
     // add output headers

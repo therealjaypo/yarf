@@ -13,6 +13,9 @@ riofs_SOURCES += stat_srv.c
 riofs_SOURCES += utils.c
 riofs_SOURCES += conf.c
 riofs_SOURCES += range.c
+if USE_MIMETYPES
+riofs_SOURCES += mimetypes.c
+endif
 riofs_SOURCES += main.c
 
 riofs_CFLAGS = $(AM_CFLAGS) $(DEPS_CFLAGS) $(LEDEPS_CFLAGS) $(LIBEVENT_OPENSSL_CFLAGS) $(SSL_CFLAGS) $(MAGIC_CFLAGS)
