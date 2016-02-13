@@ -45,7 +45,7 @@ static gboolean parse_dir_xml (DirListRequest *dir_list, const char *xml, size_t
     xmlXPathObjectPtr key;
     xmlNodeSetPtr key_nodes;
     const gchar *key_prefix = conf_get_string(application_get_conf(dir_list->app),"s3.key_prefix");
-    int pfxlen = strlen((char *)key_prefix);
+    int pfxlen = strlen(key_prefix);
 
 // checks value for NULL, continue if it fails
 #define XML_VAR_CHK(v) \
@@ -165,7 +165,7 @@ static gboolean parse_dir_xml (DirListRequest *dir_list, const char *xml, size_t
 			bname += pfxlen-1;
 	}
 
-	if( strlen((char *)bname) ) {
+	if( strlen(bname) ) {
             dir_tree_update_entry (dir_list->dir_tree, dir_list->dir_path, DET_file, dir_list->ino,
                 bname, size, last_modified);
 	}
@@ -374,10 +374,7 @@ void http_connection_get_directory_listing (HttpConnection *con, const gchar *di
     DirListRequest *dir_req;
     gchar *req_path;
     gboolean res;
-    const gchar *key_prefix = conf_get_string(application_get_conf(con->app),"s3.key_prefix");
-
-    if( key_prefix )
-    	key_prefix++;
+    const gchar *key_prefix;
 
     LOG_debug (CON_DIR_LOG, INO_CON_H"Getting directory listing for: >>%s<<", INO_T (con), con, dir_path);
 
@@ -393,6 +390,10 @@ void http_connection_get_directory_listing (HttpConnection *con, const gchar *di
     // acquire HTTP client
     http_connection_acquire (con);
 
+    key_prefix = conf_get_string(application_get_conf(con->app),"s3.key_prefix");
+    if( strlen(key_prefix) )
+    	key_prefix++;
+
     //XXX: fix dir_path
     if (!strlen (dir_path)) {
         dir_req->dir_path = g_strdup ("");
@@ -400,7 +401,9 @@ void http_connection_get_directory_listing (HttpConnection *con, const gchar *di
         dir_req->dir_path = g_strdup_printf ("%s/", dir_path);
     }
 
-    req_path = g_strdup_printf ("/?delimiter=/&max-keys=%u&prefix=%s%s", dir_req->max_keys, (char *)key_prefix, dir_req->dir_path);
+	printf("\nPREFIX=%s",key_prefix);
+
+    req_path = g_strdup_printf ("/?delimiter=/&max-keys=%u&prefix=%s%s", dir_req->max_keys, key_prefix, dir_req->dir_path);
 
     res = http_connection_make_request (con,
         req_path, "GET",
