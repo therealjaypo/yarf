@@ -1,19 +1,70 @@
-# RioFS [![Build Status](https://secure.travis-ci.org/skoobe/riofs.png)](https://travis-ci.org/skoobe/riofs) <a href="https://scan.coverity.com/projects/406"><img alt="Coverity Scan Build Status" src="https://scan.coverity.com/projects/406/badge.svg"/></a>
+# YaRF
 
-RioFS is an userspace filesystem for Amazon S3 buckets for servers that run on Linux and MacOSX. It supports versioned and non-versioned buckets in all AWS regions. RioFS development started at [Skoobe](https://www.skoobe.de) as a storage backend for legacy daemons which cannot talk natively to S3. It handles buckets with many thousands of keys and highly concurrent access gracefully.
+RioFS is a userspace filesystem that allows administrators to mount Amazon S3 buckets on \*nix boxes as local paths using the FUSE driver. YaRF is nothing more than *Y*et *A*nother *R*ioFS *F*ork.
+
+## Differences
+
+There's no point in forking a project that already does what you want, so here are a few of the reasons that led me to fork YaRF:
+
+1. Support for mounting prefixes within buckets  
+   ie: `riofs bucket-name/arbitrary/prefix/here localdir`
+
+
+2. Better MIME typing on created objects by using `/etc/mime.types` instead of `libmagic`, which is useful when using S3's static web server
+
+3. Optional setting of a `Cache-Control` header which helps when using S3's static web server
+
+### Known Issues
+
+1. Appending data to an existing file is not supported (this is an S3 limitation)
+
+2. Folder renaming is not supported (inherited limitation)
+
+3. YaRF/RioFS is a leaky abstraction. There are several POSIXy things that aren't (and probably will never) be supported.
+
+4. YaRF seems to dislike 0 byte files when mounting a bucket without a prefix. It's on my list.
+
+5. Sometimes killing the riofs won't remove the mount from the kernel's mount table requiring a manual `umount`. Seems to be more an issue with CentOS' antiquated FUSE than Rio.
+
+6. With neither `libmagic` nor `/etc/mime.types` everything is probably uploaded as `text/plain`.
 
 ### Dependencies
 
+As YaRF is basically a fork of RioFS, it has the same dependencies as the upstream project:
+
 * glib >= 2.22
-* fuse >= 2.7.3
+* fuse >= 2.73
 * libevent >= 2.0
 * libxml >= 2.6
 * libcrypto >= 0.9
-* libmagic (optional: --with-libmagic=PATH)
+* libmagic (optional, with --with-libmagic=*PATH*)
 
-Find here installation guides for [Ubuntu](https://github.com/skoobe/riofs/wiki/Ubuntu), [Centos](https://github.com/skoobe/riofs/wiki/Centos) and [MacOSX](https://github.com/skoobe/riofs/wiki/MacOSX)
+### Tested Platforms
 
-### Building
+I've managed to build and use both YaRF and RioFS without any major issues on the following platorms:
+
+* CentOS 6.6 and 6.7
+* Ubuntu 14.04 and 15.04
+* Amazon Linux v1.4.3 and v2.0.6
+
+## Building YaRF
+
+Building YaRF differs from building regular RioFS only when you want to use `/etc/mime.types` instead of `libmagic`. The rest of the modifications (`Cache-Control` and bucket prefix support) are always available.
+
+### Configure Options
+
+**--enable-debug**  
+Creates a debug build of RioFS/YaRF
+
+**--with-libmagic**  
+Use `libmagic` for guessing MIME types of created objects
+
+**--with-mimetypes**  
+Use the `/etc/mime.types` to guess the MIME types of created objects
+
+### Examples
+
+#### Vanilla RioFS
 
 ```
 ./autogen.sh
@@ -22,62 +73,52 @@ make
 sudo make install
 ```
 
-### Using
+#### With `libmagic` MIME types
 
 ```
-export AWS_ACCESS_KEY_ID="your AWS access key"
-export AWS_SECRET_ACCESS_KEY="your AWS secret access key"
-riofs [options] [bucketname] [mountpoint]
+./autogen.sh
+./configure --with-libmagic
+make
+sudo make install
 ```
 
-#### Options
+#### With `/etc/mime.types` MIME types
 
 ```
--v: Verbose output.
--f: Do not daemonize process.
--c path: Path to configuration file.
--o "opt[,opt...]": fuse options
--l path: Log file to use.
---uid: Set UID of filesystem owner.
---gid: Set GID of filesystem owner.
---fmode: Set mode for files.
---dmode: Set mode for directories.
+./autogen.sh
+./configure --with-mimetypes
+make
+sudo make install
 ```
 
-#### Hints
+## Usage
 
-*   In order to allow other users to access a mounted directory:
+The most basic way of using YaRF is:
 
-    - make sure `/etc/fuse.conf` contains `user_allow_other` option
-  
-    - launch RioFS with  `-o "allow_other"`  parameter
+```
+export AWS_ACCESS_KEY_ID="your access key"  
+export AWS_SECRET_ACCESS_KEY="your secret"
+```
 
-* On OS X it is recommended to run RioFS with the `-o "direct_io"` parameter
- 
-* Default configuration is located at `$(prefix)/etc/riofs.conf.xml`
+### Options
 
-* Use `./configure --with-libmagic=PATH` to guess the content-type of uploaded content (requires libmagic)
+**-v** Verbose output  
+**-f** Run in foreground  
+**-c [file]** Use configuration file  
+**-o "opt[,opt...]"** FUSE options  
+**-l [path]** Log file to use  
+**--uid [uid]** UID of filesystem owner  
+**--gid [gid]** GID of filesystem owner  
+**--fmode [octal]** Mode for files  
+**--dmode [octal]** Mode for directories
 
-* Use `./configure --enable-debug` to create a debug build
 
-* RioFS comes with a statistics server, have a look at riofs.xml.conf for details
+### Statistics Server
 
-* Send a USR1 signal to tell RioFS to reread the configuration file
+Haven't touched this, never used it, but all you'd ever want to know is in `riofs.xml.conf`.
 
-* Send a USR2 signal to tell RioFS to reopen log file (useful for logrotate)
+### Signals
 
-* Send a TERM signal to unmount filesystem and terminate running RioFS instance (example: ```killall riofs```)
-
-### Known limitations
-
-* Appending data to an existing file is not supported.
-
-* Folder renaming is not supported.
-
-* A file system for the S3 API is a [leaky abstraction](http://en.wikipedia.org/wiki/Leaky_abstraction). Don't expect POSIX file system semantics.
-
-### Contribute
-
-* Any help is welcome, just open an issue if you find a bug
-
-* We also need better documentation, testing, tutorials and benchmarks
+**SIGUSR1** Re-read the configuration file  
+**SIGUSR2** Re-open log file  
+**SIGTERM** Unmount filesystem and terminate YaRF
