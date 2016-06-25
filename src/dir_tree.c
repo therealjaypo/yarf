@@ -1959,6 +1959,7 @@ static void dir_tree_on_rename_copy_con_cb (gpointer client, gpointer ctx)
     RenameData *rdata = (RenameData *) ctx;
     gchar *dst_path = NULL;
     gchar *src_path = NULL;
+    gchar *key_prefix = conf_get_string(application_get_conf (rdata->dtree->app), "s3.key_prefix" );
     gboolean res;
     DirEntry *en;
     DirEntry *parent_en;
@@ -1994,9 +1995,12 @@ static void dir_tree_on_rename_copy_con_cb (gpointer client, gpointer ctx)
     http_connection_acquire (con);
 
     // source
-    src_path = g_strdup_printf ("%s/%s", conf_get_string (application_get_conf (rdata->dtree->app), "s3.bucket_name"), en->fullpath);
+    if( strlen(key_prefix) )
+	    src_path = g_strdup_printf ("%s%s%s", conf_get_string (application_get_conf (rdata->dtree->app), "s3.bucket_name"), key_prefix, en->fullpath);
+    else
+	    src_path = g_strdup_printf ("%s/%s", conf_get_string (application_get_conf (rdata->dtree->app), "s3.bucket_name"), en->fullpath);
+
     http_connection_add_output_header (con, "x-amz-copy-source", src_path);
-    g_free (src_path);
 
     http_connection_add_output_header (con, "x-amz-storage-class", conf_get_string (application_get_conf (rdata->dtree->app), "s3.storage_type"));
 
@@ -2005,7 +2009,8 @@ static void dir_tree_on_rename_copy_con_cb (gpointer client, gpointer ctx)
     else
         dst_path = g_strdup_printf ("/%s/%s", newparent_en->fullpath, rdata->newname);
 
-    LOG_debug (DIR_TREE_LOG, INO_CON_H"Rename: coping %s to %s", INO_T (en->ino), con, en->fullpath, dst_path);
+    LOG_debug (DIR_TREE_LOG, INO_CON_H"Rename: coping %s (%s) to %s", INO_T (en->ino), con, en->fullpath, src_path, dst_path);
+    g_free (src_path);
 
     res = http_connection_make_request (con,
         dst_path, "PUT",
